@@ -100,13 +100,13 @@
     practiceDone: { en: 'That is the whole skill: notice, breathe, stay.', rw: 'Ubwo ni bwo bushobozi bwose: kubona, guhumeka, kuguma.', check: true },
 
     setLang: { en: 'Language', rw: 'Ururimi' },
-    setSound: { en: 'Sound', rw: 'Ijwi' },
+    setSound: { en: 'Music and sound', rw: 'Umuziki n\'ijwi', check: true },
     setMotion: { en: 'Reduced motion (still scenes)', rw: 'Gabanya ibinyeganyega (amashusho ahagaze)', check: true },
     setSimple: { en: 'Simple graphics (for slow phones)', rw: 'Amashusho yoroheje (kuri telefoni zitinda)', check: true },
     setSkipGate: { en: 'Skip the gate when I open the page', rw: 'Simbuka irembo igihe mfunguye urubuga', check: true },
     setSingle: { en: 'I do not have a partner now', rw: 'Ubu nta mukunzi mfite', check: true },
-    on: { en: 'On', rw: 'Birakora' },
-    off: { en: 'Off', rw: 'Birazimye' },
+    on: { en: 'On', rw: 'Rirakora', check: true },
+    off: { en: 'Off', rw: 'Rirazimye', check: true },
     setPrivacy: { en: 'This page saves only your plan and these settings, on this phone. It keeps no history, counts or streaks, and sends nothing anywhere.', rw: 'Uru rubuga rubika gusa gahunda yawe n\'iri genamiterere, kuri iyi telefoni. Nta mateka, imibare cyangwa urukurikirane rubika, kandi nta cyo rwohereza ahandi.', check: true },
     offlineReady: { en: 'Works offline.', rw: 'Rukora nta interineti.' }
   };

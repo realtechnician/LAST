@@ -92,13 +92,13 @@
 | practiceIntro | Three calm minutes of riding the wave, for a quiet moment. Practising now makes the skill ready when a real urge comes. | Iminota itatu ituje yo kugendera ku muraba, mu gihe utuje. Kwitoza ubu bituma ubushobozi buba bwiteguye igihe irari nyaryo rije. [CHECK] |
 | practiceDone | That is the whole skill: notice, breathe, stay. | Ubwo ni bwo bushobozi bwose: kubona, guhumeka, kuguma. [CHECK] |
 | setLang | Language | Ururimi |
-| setSound | Sound | Ijwi |
+| setSound | Music and sound | Umuziki n'ijwi [CHECK] |
 | setMotion | Reduced motion (still scenes) | Gabanya ibinyeganyega (amashusho ahagaze) [CHECK] |
 | setSimple | Simple graphics (for slow phones) | Amashusho yoroheje (kuri telefoni zitinda) [CHECK] |
 | setSkipGate | Skip the gate when I open the page | Simbuka irembo igihe mfunguye urubuga [CHECK] |
 | setSingle | I do not have a partner now | Ubu nta mukunzi mfite [CHECK] |
-| on | On | Birakora |
-| off | Off | Birazimye |
+| on | On | Rirakora [CHECK] |
+| off | Off | Rirazimye [CHECK] |
 | setPrivacy | This page saves only your plan and these settings, on this phone. It keeps no history, counts or streaks, and sends nothing anywhere. | Uru rubuga rubika gusa gahunda yawe n'iri genamiterere, kuri iyi telefoni. Nta mateka, imibare cyangwa urukurikirane rubika, kandi nta cyo rwohereza ahandi. [CHECK] |
 | offlineReady | Works offline. | Rukora nta interineti. |
 

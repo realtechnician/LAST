@@ -18,6 +18,7 @@ You do not need to install anything. The page is plain HTML, CSS and JavaScript.
 | `js/app.js` | The main program: the screens, the 5-minute rescue, My plan, settings, sound. |
 | `js/journey.js` | The walk through the void: the torch, the path, the threads of false thoughts, the lanterns. |
 | `js/games.js` | The three games and the "ride the wave" breathing scene. |
+| `js/music.js` | The music and sound effects. Nothing is downloaded: the phone makes every sound itself, so it works offline. Each step has its own piece. |
 | `js/scene3d.js` | The 3D gate and the 3D void. |
 | `vendor/three.module.min.js` | Three.js, the 3D library, kept as a local file so the page needs no other website. Its licence is `vendor/THREE-LICENSE`. |
 | `sw.js` | The "service worker". It keeps a copy of the page on the phone so it opens without internet. |
@@ -48,6 +49,8 @@ To go straight into the rescue, add `#rescue` to the address: `https://YOUR-NAME
 **Change words:** edit `js/content.js`. Each text has an `en` (English) and an `rw` (Kinyarwanda) version. If you have Node.js, run `node tools/make-research-md.js` afterwards so the `research/` files match.
 
 **After any change:** open `sw.js` and change `komera-v1` to `komera-v2` (then `v3`, and so on). Phones that already saved the page will then fetch the new version.
+
+**Music:** it is off until the person taps the **♪** button at the top (or switches it on in Settings), because people may open the page in public. The choice is remembered on the phone.
 
 **Add a reminder:** in `js/content.js`, find `C.reminders` and add a line like the others.
 
