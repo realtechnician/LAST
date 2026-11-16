@@ -1,7 +1,7 @@
 // Service worker: keeps a copy of every file on the phone so the page
 // opens without internet. It never sends anything anywhere.
 // Change VERSION whenever you change any file, so phones fetch the new copy.
-const VERSION = 'komera-v5';
+const VERSION = 'komera-v6';
 const FILES = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest', 'icon.svg',
   'js/content.js', 'js/app.js', 'js/journey.js', 'js/games.js', 'js/music.js', 'js/scene3d.js',

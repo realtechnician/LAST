@@ -33,10 +33,15 @@ button { cursor: pointer; }
 #gl { opacity: 0; transition: opacity 1.2s; }
 #gl.on { opacity: 1; }
 #fx { pointer-events: none; }
+/* Nothing in the void pops in or out: the path, the lanterns and the buttons fade. */
+#fx, #world { transition: opacity 1.4s ease; }
+body.hub #fx, body.hub #world, body.hub .hint, body.hub .hubbar { animation: emerge 1.8s ease both; }
+body.leaving #fx, body.leaving #world, body.leaving .hint, body.leaving .hubbar { opacity: 0; transition: opacity 1.4s ease; pointer-events: none; }
+@keyframes emerge { from { opacity: 0; } to { opacity: 1; } }
 #world { pointer-events: none; overflow: hidden; }
 #world > * { pointer-events: auto; }
 #dark {
-  opacity: 0; transition: opacity 1.5s; pointer-events: none;
+  opacity: 0; transition: opacity 2.2s ease; pointer-events: none;
   background: radial-gradient(circle at var(--tx) var(--ty),
     rgba(4, 2, 8, 0) 0, rgba(4, 2, 8, .15) 90px, rgba(4, 2, 8, .6) 240px, rgba(4, 2, 8, .74) 460px);
 }
