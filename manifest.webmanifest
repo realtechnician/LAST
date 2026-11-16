@@ -1,0 +1,13 @@
+{
+  "name": "Komera",
+  "short_name": "Komera",
+  "description": "A private page to get through a strong urge in about 5 minutes.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050308",
+  "theme_color": "#050308",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }],
+  "shortcuts": [{ "name": "Rescue now", "url": "./#rescue" }]
+}

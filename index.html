@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Komera</title>
+<meta name="description" content="A private, free page to get through a strong urge in about 5 minutes.">
+<meta name="theme-color" content="#050308">
+<meta name="referrer" content="no-referrer">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!-- Layer 1: the simple (2D) scene. Always present, shown at once, and used
+     on slow phones and with reduced motion. -->
+<div id="flat" aria-hidden="true">
+  <div class="fvoid"><i></i><i></i><i></i><i></i></div>
+  <div class="fgate">
+    <div class="fglow"></div>
+    <div class="fdoor l"><b></b><b></b><b></b><u></u></div>
+    <div class="fdoor r"><b></b><b></b><b></b><u></u></div>
+    <div class="farch"></div>
+  </div>
+</div>
+<!-- Layer 2: the 3D scene (Three.js), loaded only if the phone can run it. -->
+<canvas id="gl" aria-hidden="true"></canvas>
+<!-- Layer 3: darkness with a hole of light at the torch. -->
+<div id="dark" aria-hidden="true"></div>
+<!-- Layer 4: the path, threads, games and the wave are drawn here. -->
+<canvas id="fx" aria-hidden="true"></canvas>
+<!-- Layer 5: lanterns and thread labels (real buttons). -->
+<div id="world"></div>
+<!-- Layer 6: every screen, button and text. -->
+<main id="ui"></main>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript><p style="color:#fff;padding:24px;font-family:sans-serif">This page needs JavaScript. Nothing you do here is sent anywhere.</p></noscript>
+<script src="js/content.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
