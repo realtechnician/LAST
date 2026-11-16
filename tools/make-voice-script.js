@@ -33,6 +33,9 @@ const sets = [
       }) }] }
 ];
 
+module.exports = { sets };
+if (require.main !== module) return;      // tools/make-voice.js only needs the list above
+
 const cell = (s) => String(s).replace(/\|/g, '\\|');
 let total = 0, md = `# Voice script
 

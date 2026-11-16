@@ -20,7 +20,8 @@ You do not need to install anything. The page is plain HTML, CSS and JavaScript.
 | `js/games.js` | The three games and the "ride the wave" breathing scene. |
 | `js/music.js` | The music and sound effects. Nothing is downloaded: the phone makes every sound itself, so it works offline. Each step has its own piece. |
 | `audio/SCRIPT.md` | The voice script: every line the page can speak, with the file name each recording needs and how to record it. Made by `tools/make-voice-script.js`. |
-| `audio/en/`, `audio/rw/` | Where the voice recordings go, one folder for each language. Empty folders mean no voice; the page still works. |
+| `audio/en/`, `audio/rw/` | The voice recordings, one folder for each language. English is recorded (81 files, about 3 MB, fetched only as they are heard). Kinyarwanda is empty until its words have been reviewed; an empty folder means no voice, and the page still works. |
+| `tools/make-voice.js` | Makes any missing recordings with ElevenLabs. Needs your own ElevenLabs API key. |
 | `js/scene3d.js` | The 3D gate and the 3D void. |
 | `img/gate-closed.jpg`, `img/gate-open.jpg` | Pictures of the 3D gate, shown on phones that are too slow for 3D and with reduced motion. Made by `tools/render-gate.js`; you only need to run that again if you change the gate. |
 | `vendor/three.module.min.js` | Three.js, the 3D library, kept as a local file so the page needs no other website. Its licence is `vendor/THREE-LICENSE`. |
