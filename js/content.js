@@ -103,6 +103,7 @@
 
     setLang: { en: 'Language', rw: 'Ururimi' },
     setSound: { en: 'Music and sound', rw: 'Umuziki n\'ijwi', check: true },
+    setVoice: { en: 'Spoken guidance (when sound is on)', rw: 'Ijwi rikuyobora (igihe ijwi rikora)', check: true },
     setMotion: { en: 'Reduced motion (still scenes)', rw: 'Gabanya ibinyeganyega (amashusho ahagaze)', check: true },
     setSimple: { en: 'Simple graphics (for slow phones)', rw: 'Amashusho yoroheje (kuri telefoni zitinda)', check: true },
     setSkipGate: { en: 'Skip the gate when I open the page', rw: 'Simbuka irembo igihe mfunguye urubuga', check: true },

@@ -95,6 +95,7 @@
 | practiceDone | That is the whole skill: notice, breathe, stay. | Ubwo ni bwo bushobozi bwose: kubona, guhumeka, kuguma. [CHECK] |
 | setLang | Language | Ururimi |
 | setSound | Music and sound | Umuziki n'ijwi [CHECK] |
+| setVoice | Spoken guidance (when sound is on) | Ijwi rikuyobora (igihe ijwi rikora) [CHECK] |
 | setMotion | Reduced motion (still scenes) | Gabanya ibinyeganyega (amashusho ahagaze) [CHECK] |
 | setSimple | Simple graphics (for slow phones) | Amashusho yoroheje (kuri telefoni zitinda) [CHECK] |
 | setSkipGate | Skip the gate when I open the page | Simbuka irembo igihe mfunguye urubuga [CHECK] |
