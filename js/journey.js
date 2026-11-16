@@ -19,14 +19,15 @@ export function createJourney(o) {
   const cv = o.canvas, g = cv.getContext('2d'), world = o.world;
   let W = 0, H = 0, dpr = 1, raf = 0, last = 0, time = 0;
   let tx = 0, ty = 0, px = 0, py = 0, pt = 0, moved = false;
-  let progress = 0, camY = 0, ended = false;
+  const was = o.resume || { progress: 0, cut: [], shown: [] };
+  let progress = was.progress, camY = 0, ended = false;
   const els = [];
 
   const pathX = (y) => W / 2 + Math.sin(y / 170) * W * .2 + Math.sin(y / 67 + 1.3) * W * .05;
   const sy = (wy) => H - (wy - camY);
 
   const threads = ITEMS.filter((i) => i.thread != null).map((i) => ({
-    y: i.y, data: o.thoughts[i.thread], shine: 0, shown: false, cut: 0, cutX: 0,
+    y: i.y, data: o.thoughts[i.thread], shine: 0, shown: !!was.shown[i.thread], cut: was.cut[i.thread] ? .0001 : 0, cutX: 0,
     seeds: [0, 1, 2, 3, 4].map(() => Math.random() * 10)
   }));
   const limit = () => { const t = threads.find((t) => !t.cut); return t ? t.y - 46 : LEN; };
@@ -68,7 +69,7 @@ export function createJourney(o) {
     W = cv.clientWidth; H = cv.clientHeight;
     cv.width = W * dpr; cv.height = H * dpr;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    if (!moved) { tx = pathX(0); ty = H * .58; setTorch(); }
+    if (!moved) { tx = pathX(progress); ty = H * .58; camY = progress - H * .42; setTorch(); }
   }
   function setTorch() {
     document.documentElement.style.setProperty('--tx', tx + 'px');
@@ -131,7 +132,7 @@ export function createJourney(o) {
       const s = sy(th.y);
       if (s < -80 || s > H + 80) continue;
       const age = th.cut ? time - th.cut : 0;
-      if (th.cut && age > 1.1) continue;
+      if (th.cut && (age > 1.1 || th.cut < .001)) continue;
       const d = Math.abs(ty - s), nearA = clamp(1 - d / 220, 0, 1);
       const fade = th.cut ? 1 - age / 1.1 : 1;
       for (let k = 0; k < 5; k++) {
@@ -198,6 +199,7 @@ export function createJourney(o) {
       g.clearRect(0, 0, W, H); world.innerHTML = '';
     },
     relabel() { build(); if (o.reduced) frame(performance.now()); },
+    snapshot: () => ({ progress, cut: threads.map((t) => !!t.cut), shown: threads.map((t) => t.shown) }),
     get progress() { return progress; }, get camY() { return camY; }, pathX, threads,
     // In reduced motion there is no walking: everything is simply open.
     openAll() { threads.forEach((t) => { t.cut = .001; t.shown = true; }); progress = LEN; }

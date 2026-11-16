@@ -1,11 +1,11 @@
 // Service worker: keeps a copy of every file on the phone so the page
 // opens without internet. It never sends anything anywhere.
 // Change VERSION whenever you change any file, so phones fetch the new copy.
-const VERSION = 'komera-v2';
+const VERSION = 'komera-v3';
 const FILES = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest', 'icon.svg',
   'js/content.js', 'js/app.js', 'js/journey.js', 'js/games.js', 'js/music.js', 'js/scene3d.js',
-  'vendor/three.module.min.js', 'research/REPORT.md'
+  'vendor/three.module.min.js', 'img/gate-closed.jpg', 'img/gate-open.jpg', 'research/REPORT.md'
 ];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));

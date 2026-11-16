@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Gate pictures</title>
+<canvas id="c" style="width:720px;height:1280px"></canvas>
+<script type="module">
+  // Renders the 3D gate into two pictures. Opened by tools/render-gate.js.
+  import { create } from '../js/scene3d.js';
+  const s = create(document.getElementById('c'), { capture: [720, 1280] });
+  window.pictures = { closed: s.picture('closed'), open: s.picture('open') };
+</script>

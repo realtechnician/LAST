@@ -175,6 +175,10 @@ export const music = {
       dropRiser(); drum(o, t, 26, .9); drum(o, t + .12, 38, .6); noise(o, t, 2.6, .35, 300, 60, false); noise(o, t, 4, .12, 7000, 2500, false);
       brass(o, t, [50, 57, 62, 66, 69], 6, .5); strings(o, t, [38, 50, 57, 62, 66, 74], 8, .5, 1800);
       [74, 78, 81, 86].forEach((m, k) => bell(o, t + .5 + k * .22, m, .12));
+    } else if (kind === 'dawn') {             // the end of the path: light breaks
+      drum(o, t, 26, .8); drum(o, t + 1.5, 26, .5); noise(o, t, 5, .1, 5000, 9000, true);
+      brass(o, t, [50, 57, 62, 66, 69, 74], 8, .55); strings(o, t, [38, 50, 57, 62, 66, 74, 78], 10, .55, 2200);
+      [62, 66, 69, 74, 78, 81, 86].forEach((m, k) => bell(o, t + .9 + k * .26, m, .13));
     } else if (kind === 'reveal') {           // the truth shows behind a thread
       strings(o, t, [57, 62, 65], 2.6, .22, 1400); bell(o, t, 81, .09);
     } else if (kind === 'cut') {              // a thread is cut

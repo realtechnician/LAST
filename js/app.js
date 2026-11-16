@@ -69,11 +69,11 @@ function enterVoid() { inVoid = true; body.classList.add('open', 'void'); scene3
 function openGate(done) {
   music.hit('open');
   body.classList.add('open');
-  let called = false; const fin = () => { if (called) return; called = true; inVoid = true; body.classList.add('void'); done(); };
+  let called = false; const fin = () => { if (called) return; called = true; inVoid = true; body.classList.add('void'); scene3d && scene3d.toVoid(); done(); };
   if (S.reduced) { enterVoid(); return fin(); }
-  setTimeout(() => body.classList.add('void'), 1300);
+  setTimeout(() => body.classList.add('void'), scene3d ? 2600 : 1500);
   if (scene3d) scene3d.open(fin);
-  setTimeout(fin, scene3d ? 3400 : 2100);                       // also the safety net if 3D stops half-way
+  setTimeout(fin, scene3d ? 4400 : 2700);                       // also the safety net if 3D stops half-way
 }
 
 /* ---------- Small helpers for building screens ---------- */
@@ -94,13 +94,15 @@ const para = (o) => `<p${o.verify ? ' class="verify"' : ''}>${esc(L(o))}</p>`;
 const list = (a) => `<ul>${a.map((o) => `<li${o.verify ? ' class="verify"' : ''}>${esc(L(o))}</li>`).join('')}</ul>`;
 
 /* ---------- Moving between screens ---------- */
-let cur = { name: 'gate' }, journey = null, act = null, timers = [];
+let cur = { name: 'gate' }, journey = null, act = null, timers = [], motes = 0;
+let walk = null;                       // where the walker is on the path. Kept for this visit only, never saved.
 const later = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); return id; };
 function leave() {
   timers.forEach(clearTimeout); timers = [];
   if (act) { act.stop(); act = null; }
-  if (journey) { journey.stop(); journey = null; }
-  body.classList.remove('hub', 'busy');
+  if (journey) { walk.state = journey.snapshot(); journey.stop(); journey = null; }
+  cancelAnimationFrame(motes); motes = 0; fx.getContext('2d').clearRect(0, 0, fx.width, fx.height);
+  body.classList.remove('hub', 'busy', 'dawn'); scene3d && scene3d.setDawn(false);
   toastEl.classList.remove('on');
 }
 function go(name, arg) {
@@ -109,11 +111,11 @@ function go(name, arg) {
   if (name !== 'gate' && !inVoid) enterVoid();
   const live = name === 'gate' || name === 'hub';
   if (scene3d) live ? scene3d.resume() : scene3d.pause();
-  music.scene(SCENE[name] || 'quiet');
+  music.scene(name === 'hub' && walk && walk.done && !S.reduced ? 'end' : SCENE[name] || 'quiet');
   views[name](arg);
   const p = $('.panel'); if (p) p.scrollTop = 0;
 }
-const rerender = () => { if (cur.name === 'hub' && journey) { hubChrome(); journey.relabel(); } else if (!act) views[cur.name](cur.arg); };
+const rerender = () => { if (cur.name === 'hub' && journey) { hubChrome(); journey.relabel(); } else if (cur.name === 'hub' && walk && walk.done) finaleScreen(); else if (!act) views[cur.name](cur.arg); };
 
 const views = {
   /* ----- The gate ----- */
@@ -154,17 +156,18 @@ const views = {
   /* ----- The void: torch, path, threads, lanterns ----- */
   hub() {
     if (S.reduced) return views.menu(true);          // still scene: no walking, everything is simply open
+    if (walk && walk.done) return finale(false);     // the path is already open on this visit
     body.classList.add('hub');
     hubChrome();
-    const thoughts = C.thoughts.filter(forMe).sort(() => Math.random() - .5).slice(0, 3);
+    walk = walk || { thoughts: C.thoughts.filter(forMe).sort(() => Math.random() - .5).slice(0, 3), state: null, done: false };
     journey = createJourney({
-      canvas: fx, world, thoughts, L, t, reduced: false,
+      canvas: fx, world, thoughts: walk.thoughts, resume: walk.state, L, t, reduced: false,
       label: (id) => t('nav' + id[0].toUpperCase() + id.slice(1)),
       onLantern: (id) => (id === 'rescue' ? startRescue() : go(id)),
       onReveal: () => music.hit('reveal'),
       onCut: () => { music.hit('cut'); toast(`<small>${esc(t('reminder'))}</small>${esc(reminder())}`); },
       onHint: (k) => { const h = $('.hint'); if (h && h.dataset.k !== k) { h.dataset.k = k; h.textContent = k === 'thread' ? t('threadHint') : k === 'torch' ? t('torchHint') : ''; } },
-      onEnd: () => toast(`<small>${esc(t('reminder'))}</small>${esc(reminder())}`, 7000)
+      onEnd: () => { walk.done = true; walk.line = reminder(); later(() => { if (cur.name === 'hub') finale(true); }, 900); }
     });
     journey.start();
   },
@@ -264,6 +267,43 @@ const views = {
   }
 };
 
+/* ----- The end of the path: the dark lifts and every lantern gathers ----- */
+function finaleScreen() {
+  const lamp = (id) => `<button class="lantern" data-a="${id === 'rescue' ? 'rescue' : 'go'}" data-to="${id}">${esc(t('nav' + id[0].toUpperCase() + id.slice(1)))}</button>`;
+  ui.innerHTML = `${top({ menu: true })}<section class="finale"><div class="in">
+    <h2>${esc(t('pathOpen'))}</h2><p>${esc(t('finaleLine'))}</p>
+    <div class="quote"><small>${esc(t('reminder'))}</small>${esc(walk.line)}</div>
+    <div class="ring">${['rescue', 'plan', 'learn', 'practice', 'help'].map(lamp).join('')}</div>
+    <button class="btn ghost" data-a="rewalk">${esc(t('walkAgain'))}</button></div></section>`;
+}
+function finale(arriving) {
+  if (journey) { journey.stop(); journey = null; }
+  body.classList.remove('hub'); body.classList.add('dawn'); toastEl.classList.remove('on');
+  scene3d && scene3d.setDawn(true);
+  if (arriving) { music.hit('dawn'); music.scene('end'); }
+  finaleScreen();
+  // Warm motes of light rise through the void.
+  const g = fx.getContext('2d'), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let W = 0, H = 0, last = performance.now();
+  const size = () => { W = fx.clientWidth; H = fx.clientHeight; fx.width = W * dpr; fx.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); };
+  size();
+  const pts = Array.from({ length: 46 }, () => ({ x: Math.random(), y: Math.random() * 1.2, r: 1 + Math.random() * 2.6, v: .02 + Math.random() * .05, p: Math.random() * 7 }));
+  const loop = (now) => {
+    motes = requestAnimationFrame(loop);
+    if (fx.clientWidth !== W || fx.clientHeight !== H) size();
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    g.clearRect(0, 0, W, H); g.globalCompositeOperation = 'lighter';
+    for (const m of pts) {
+      m.y -= m.v * dt; if (m.y < -.05) { m.y = 1.05; m.x = Math.random(); }
+      const x = (m.x + Math.sin(now / 1400 + m.p) * .02) * W, y = m.y * H, r = m.r * 5;
+      const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(255,226,170,${.5 * Math.min(1, m.y * 3)})`); gr.addColorStop(1, 'rgba(255,190,100,0)');
+      g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    g.globalCompositeOperation = 'source-over';
+  };
+  motes = requestAnimationFrame(loop);
+}
+
 function hubChrome() {
   ui.innerHTML = `${top({ menu: true })}<div class="hint" data-k=""></div>
     <div class="hubbar"><button class="btn gold" data-a="rescue">${esc(t('rescueNow'))}</button></div>`;
@@ -330,6 +370,7 @@ function playMove() {
 const actions = {
   go: (b) => go(b.dataset.to, b.dataset.arg != null ? +b.dataset.arg : undefined),
   rescue: () => startRescue(),
+  rewalk: () => { walk = null; go('hub'); },
   lang: () => setLang(S.lang === 'en' ? 'rw' : 'en'),
   sound: () => { S.sound = !S.sound; save(); music.enable(S.sound); music.hit('tap'); rerender(); },
   setlang: (b) => setLang(b.dataset.l),
@@ -355,7 +396,7 @@ const actions = {
   wipe: () => {
     const lang = S.lang;
     try { localStorage.removeItem(KEY); } catch (e) { /* nothing was saved */ }
-    S = defaults(); S.lang = lang;                      // kept for this visit only, not saved
+    S = defaults(); S.lang = lang; walk = null;                      // kept for this visit only, not saved
     music.enable(false); applyMotion(); go(cur.name === 'settings' ? 'settings' : 'plan'); toast(esc(t('deleted')), 3200);
   },
   set: (b) => {
