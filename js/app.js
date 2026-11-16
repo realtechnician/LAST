@@ -20,7 +20,7 @@ const defaults = () => ({
   lang: (navigator.language || 'en').toLowerCase().startsWith('rw') ? 'rw' : 'en',
   sound: false,
   reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
-  simple: false, skipGate: false, single: false, seen: false,
+  voice: true, simple: false, skipGate: false, single: false, seen: false,
   plans: [], why: ''
 });
 function load() { try { return Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { return defaults(); } }
@@ -32,10 +32,26 @@ const t = (k) => L(C.ui[k]);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const forMe = (x) => !(S.single && x.partner);
-function reminder() { const r = pick(C.reminders.filter(forMe)); return L(S.single && r.single ? r.single : r); }
+const two = (n) => String(n).padStart(2, '0');
+function remind() {                                   // a reminder, and the name of its voice recording
+  const r = pick(C.reminders.filter(forMe)), single = S.single && r.single;
+  return { text: L(single ? r.single : r), clip: `reminder-${two(C.reminders.indexOf(r) + 1)}${single ? '-single' : ''}` };
+}
+const reminder = () => remind().text;
 
 /* ---------- Sound and music: off unless switched on (see js/music.js) ---------- */
 const audio = () => music.unlock();
+// The spoken voice. Recordings live in audio/<language>/ and are listed in audio/SCRIPT.md.
+// A language with no recordings is simply silent.
+const voiceThere = {}; let voiceGen = 0;
+function say(ids, replace) {
+  if (!S.sound || !S.voice || !music.ready()) return;
+  const lang = S.lang, base = `audio/${lang}/`, g = voiceGen;
+  voiceThere[lang] = voiceThere[lang] || music.has(base + 'gate.mp3');
+  voiceThere[lang].then((ok) => { if (ok && g === voiceGen && lang === S.lang) music.say(ids.map((id) => base + id + '.mp3'), replace); });
+}
+const speak = (...ids) => say(ids, true);             // stop whatever is being said, then say this
+const speakAfter = (...ids) => say(ids, false);        // say this when the current line is finished
 const SCENE = { gate: 'gate', hub: 'void', end: 'end' };          // every other screen plays the void music quietly
 addEventListener('pointerdown', () => { if (S.sound) music.enable(true); }, { once: true });
 
@@ -95,6 +111,7 @@ const list = (a) => `<ul>${a.map((o) => `<li${o.verify ? ' class="verify"' : ''}
 
 /* ---------- Moving between screens ---------- */
 let cur = { name: 'gate' }, journey = null, act = null, timers = [], motes = 0;
+let gateRun = 0;
 let walk = null;                       // where the walker is on the path. Kept for this visit only, never saved.
 const later = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); return id; };
 function leave() {
@@ -104,6 +121,7 @@ function leave() {
   cancelAnimationFrame(motes); motes = 0; fx.getContext('2d').clearRect(0, 0, fx.width, fx.height);
   body.classList.remove('hub', 'busy', 'dawn'); scene3d && scene3d.setDawn(false);
   toastEl.classList.remove('on');
+  voiceGen++; music.hush();
 }
 function go(name, arg) {
   leave();
@@ -129,9 +147,10 @@ const views = {
       ${S.seen ? `<button class="btn" data-a="go" data-to="hub">${esc(t('skipGate'))}</button>` : ''}</div>
       <div class="legal">${esc(t('privacyLine'))} ${esc(t('notTherapy'))}</div></section>`;
     let holding = false, raf = 0, last = performance.now(), opened = false;
+    const run = ++gateRun;                           // if the gate is drawn again (language or sound tapped), the older loop stops
     const gate = $('#gate');
     const tick = (now) => {
-      if (cur.name !== 'gate' || opened) return;
+      if (cur.name !== 'gate' || opened || run !== gateRun) return;
       raf = requestAnimationFrame(tick);
       const dt = (now - last) / 1000; last = now;
       const next = Math.max(0, Math.min(1, hold + (holding ? dt / 2 : -dt / 1.2)));
@@ -143,7 +162,8 @@ const views = {
       }
     };
     const on = (e) => { if (e.target.closest('button')) return; holding = true; audio(); };
-    const sing = () => { if (cur.name === 'gate' && !opened) music.hold(hold); };
+    let spoke = false;
+    const sing = () => { if (cur.name !== 'gate' || opened) return; music.hold(hold); if (!spoke && hold > .12) { spoke = true; speak('gate'); } };
     const off = () => { holding = false; };
     gate.addEventListener('pointerdown', on); gate.addEventListener('pointerup', off);
     gate.addEventListener('pointercancel', off); gate.addEventListener('pointerleave', off);
@@ -164,10 +184,10 @@ const views = {
       canvas: fx, world, thoughts: walk.thoughts, resume: walk.state, L, t, reduced: false,
       label: (id) => t('nav' + id[0].toUpperCase() + id.slice(1)),
       onLantern: (id) => (id === 'rescue' ? startRescue() : go(id)),
-      onReveal: () => music.hit('reveal'),
-      onCut: () => { music.hit('cut'); toast(`<small>${esc(t('reminder'))}</small>${esc(reminder())}`); },
+      onReveal: (i) => { music.hit('reveal'); speak('truth-' + two(C.thoughts.indexOf(walk.thoughts[i]) + 1)); },
+      onCut: () => { const r = remind(); music.hit('cut'); toast(`<small>${esc(t('reminder'))}</small>${esc(r.text)}`); speakAfter(r.clip); },
       onHint: (k) => { const h = $('.hint'); if (h && h.dataset.k !== k) { h.dataset.k = k; h.textContent = k === 'thread' ? t('threadHint') : k === 'torch' ? t('torchHint') : ''; } },
-      onEnd: () => { walk.done = true; walk.line = reminder(); later(() => { if (cur.name === 'hub') finale(true); }, 900); }
+      onEnd: () => { const r = remind(); walk.done = true; walk.line = r.text; walk.clip = r.clip; later(() => { if (cur.name === 'hub') finale(true); }, 900); }
     });
     journey.start();
   },
@@ -183,21 +203,24 @@ const views = {
 
   /* ----- The 5-minute rescue ----- */
   rate(which) {
+    speak(which === 1 ? 'rate-1' : 'rate-2');
     ui.innerHTML = panel(`<h2>${esc(t(which === 1 ? 'rateQ' : 'rateAgainQ'))}</h2>
       <div class="rate">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => `<button data-a="rated" data-n="${n}">${n}</button>`).join('')}</div>
       <div class="scale"><span>1 · ${esc(t('rateLow'))}</span><span>${esc(t('rateHigh'))} · 10</span></div>`, { back: 'hub' });
   },
   choose(second) {
+    speak(second ? 'still-strong' : 'strong');
     const games = [['fit', 'gameFit'], ['sort', 'gameSort'], ['path', 'gamePath']].filter(([k]) => !R.played.includes(k));
     ui.innerHTML = panel(`<h2>${esc(t(second ? 'stillStrong' : 'pathStrong'))}</h2><p class="small">${esc(t('chooseGame'))}</p><div class="stack">
       ${games.map(([k, s]) => `<button class="card" data-a="game" data-k="${k}"><b>${esc(t(s))}</b><span>${esc(t(s + 'How'))}</span></button>`).join('')}
       ${second ? `<button class="card" data-a="move"><b>${esc(t('moveGuide'))}</b></button>` : ''}</div>${why(second ? 'move' : 'game')}`, { back: 'hub' });
   },
   end() {
+    const rem = remind(); speak('end', rem.clip);
     const plans = S.plans.map((p) => `<div class="plan">${esc(t('planIf'))} ${esc(p.i)}, ${esc(t('planThen'))} ${esc(p.t)}.</div>`).join('');
     ui.innerHTML = panel(`<h2>${esc(t('endTitle'))}</h2><p>${esc(t('endHonest'))}</p>
       ${R.last >= 7 ? `<p class="verify">${esc(t('stillAfter'))} <a href="#" data-a="go" data-to="help">${esc(t('navHelp'))}</a></p>` : ''}
-      <div class="quote"><small>${esc(t('reminder'))}</small>${esc(reminder())}</div>
+      <div class="quote"><small>${esc(t('reminder'))}</small>${esc(rem.text)}</div>
       <h3>${esc(t('yourPlan'))}</h3>${plans || `<p class="small">${esc(t('noPlanYet'))}</p><button class="btn wide" data-a="go" data-to="plan">${esc(t('makePlan'))}</button>`}
       ${S.why ? `<h3>${esc(t('yourWhy'))}</h3><p>${esc(S.why)}</p>` : ''}
       <h3>${esc(t('oneChange'))}</h3><div class="plan"><span id="chg">${esc(L(pick(C.setting)))}</span>
@@ -261,7 +284,7 @@ const views = {
     const tg = (k, label) => `<button class="toggle" data-a="set" data-k="${k}" aria-pressed="${!!S[k]}"><span>${esc(label)}</span><i></i></button>`;
     ui.innerHTML = panel(`<h2>${esc(t('navSettings'))}</h2>
       <label>${esc(t('setLang'))}</label><div class="seg"><button data-a="setlang" data-l="en" aria-pressed="${S.lang === 'en'}">English</button><button data-a="setlang" data-l="rw" aria-pressed="${S.lang === 'rw'}">Kinyarwanda</button></div>
-      <div style="margin-top:14px">${tg('sound', t('setSound'))}${tg('reduced', t('setMotion'))}${tg('simple', t('setSimple'))}${tg('skipGate', t('setSkipGate'))}${tg('single', t('setSingle'))}</div>
+      <div style="margin-top:14px">${tg('sound', t('setSound'))}${tg('voice', t('setVoice'))}${tg('reduced', t('setMotion'))}${tg('simple', t('setSimple'))}${tg('skipGate', t('setSkipGate'))}${tg('single', t('setSingle'))}</div>
       <p class="small" style="margin-top:18px">${esc(t('setPrivacy'))} ${esc(t('offlineReady'))} <span id="ver"></span></p>
       <p><button class="btn danger wide" data-a="wipe">${esc(t('deleteAll'))}</button></p>`, { back: 'hub' });
     // Shows which saved version this is (the name set in sw.js), to check that an update arrived.
@@ -282,7 +305,7 @@ function finale(arriving) {
   if (journey) { journey.stop(); journey = null; }
   body.classList.remove('hub'); body.classList.add('dawn'); toastEl.classList.remove('on');
   scene3d && scene3d.setDawn(true);
-  if (arriving) { music.hit('dawn'); music.scene('end'); }
+  if (arriving) { music.hit('dawn'); music.scene('end'); later(() => speak('path-open', walk.clip), 1800); }
   finaleScreen();
   // Warm motes of light rise through the void.
   const g = fx.getContext('2d'), dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -340,7 +363,7 @@ function playGame(k) {
 }
 function playWave(done) {
   const tick = activity(`<div class="say"></div><div class="breath"></div>`);
-  const say = $('.say'), br = $('.breath'); let shown = -1; music.scene('wave');
+  const line = $('.say'), br = $('.breath'); let shown = -1; music.scene('wave');
   onActEnd = done;
   act = waveScene(fx, {
     duration: DUR.wave, reduced: S.reduced,
@@ -348,7 +371,7 @@ function playWave(done) {
     onTick: (p) => {
       tick(p);
       const i = Math.min(C.wave.length - 1, Math.floor(p * C.wave.length));
-      if (i !== shown) { shown = i; say.style.opacity = 0; later(() => { say.textContent = L(C.wave[i]); say.style.opacity = 1; }, shown ? 600 : 0); }
+      if (i !== shown) { shown = i; line.style.opacity = 0; later(() => { line.textContent = L(C.wave[i]); line.style.opacity = 1; speak('wave-' + two(i + 1)); }, shown ? 600 : 0); }
     },
     onEnd: () => { act = null; onActEnd(); }
   });
@@ -360,7 +383,7 @@ function playMove() {
   const loop = (now) => {
     const p = (now - t0) / 1000 / DUR.move; tick(p);
     const i = Math.min(C.move.length - 1, Math.floor(p * C.move.length));
-    if (i !== shown) { shown = i; big.textContent = L(C.move[i]); }
+    if (i !== shown) { shown = i; big.textContent = L(C.move[i]); speak('move-' + two(i + 1)); }
     if (p >= 1) { act = null; return onActEnd(); }
     raf = requestAnimationFrame(loop);
   };
@@ -405,6 +428,7 @@ const actions = {
     const k = b.dataset.k; S[k] = !S[k]; save();
     if (k === 'reduced' || k === 'simple') { if (!S.reduced && !S.simple) sessionSimple = false; applyMotion(); }
     if (k === 'sound') { music.enable(S.sound); music.hit('tap'); }
+    if (k === 'voice' && !S.voice) music.hush();
     views.settings();
   }
 };

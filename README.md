@@ -19,6 +19,8 @@ You do not need to install anything. The page is plain HTML, CSS and JavaScript.
 | `js/journey.js` | The walk through the void: the torch, the path, the threads of false thoughts, the lanterns. |
 | `js/games.js` | The three games and the "ride the wave" breathing scene. |
 | `js/music.js` | The music and sound effects. Nothing is downloaded: the phone makes every sound itself, so it works offline. Each step has its own piece. |
+| `audio/SCRIPT.md` | The voice script: every line the page can speak, with the file name each recording needs and how to record it. Made by `tools/make-voice-script.js`. |
+| `audio/en/`, `audio/rw/` | Where the voice recordings go, one folder for each language. Empty folders mean no voice; the page still works. |
 | `js/scene3d.js` | The 3D gate and the 3D void. |
 | `img/gate-closed.jpg`, `img/gate-open.jpg` | Pictures of the 3D gate, shown on phones that are too slow for 3D and with reduced motion. Made by `tools/render-gate.js`; you only need to run that again if you change the gate. |
 | `vendor/three.module.min.js` | Three.js, the 3D library, kept as a local file so the page needs no other website. Its licence is `vendor/THREE-LICENSE`. |
@@ -52,6 +54,8 @@ To go straight into the rescue, add `#rescue` to the address: `https://YOUR-NAME
 **After any change:** open `sw.js` and change the version name near the top (for example `komera-v4` to `komera-v5`). Without this, phones keep showing the copy they saved. With it, a phone fetches the new files the next time the page is opened and switches to them at the gate. Settings shows the version a phone is on (for example "v4") at the end of the privacy note.
 
 **Music:** it is off until the person taps the **♪** button at the top (or switches it on in Settings), because people may open the page in public. The choice is remembered on the phone.
+
+**Voice:** when sound is on and recordings exist for the language, the page speaks the gate line, the rescue, the truths behind the threads and the reminders. "Spoken guidance" in Settings turns the voice off while keeping the music. Recordings are fetched only when they are first heard, then kept for offline use.
 
 **Add a reminder:** in `js/content.js`, find `C.reminders` and add a line like the others.
 

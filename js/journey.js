@@ -57,7 +57,7 @@ export function createJourney(o) {
     world.appendChild(e); els.push({ el: e, y: LEN + 40, end: true });
   }
 
-  function reveal(th) { th.shown = true; th.el.classList.add('shown'); o.onReveal && o.onReveal(); }
+  function reveal(th) { th.shown = true; th.el.classList.add('shown'); o.onReveal && o.onReveal(threads.indexOf(th)); }
   function cut(th, x) {
     if (th.cut) return;
     th.cut = time || .001; th.cutX = x; th.el.classList.add('cut');

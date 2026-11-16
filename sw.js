@@ -1,7 +1,7 @@
 // Service worker: keeps a copy of every file on the phone so the page
 // opens without internet. It never sends anything anywhere.
 // Change VERSION whenever you change any file, so phones fetch the new copy.
-const VERSION = 'komera-v4';
+const VERSION = 'komera-v5';
 const FILES = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest', 'icon.svg',
   'js/content.js', 'js/app.js', 'js/journey.js', 'js/games.js', 'js/music.js', 'js/scene3d.js',
@@ -18,5 +18,9 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;   // links to studies go straight to the web
-  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || fetch(e.request)));
+  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || fetch(e.request).then((res) => {
+    // Voice recordings are saved the first time they are heard, so they also work offline afterwards.
+    if (res.ok && url.pathname.includes('/audio/')) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(e.request, copy)); }
+    return res;
+  })));
 });

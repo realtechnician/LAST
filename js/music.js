@@ -9,7 +9,8 @@
 //   end   - a warm resolution
 const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
 let ctx = null, master = null, verb = null, level = null, on = false, want = 'gate';
-let cur = null, timer = 0, riser = null;
+let cur = null, timer = 0, riser = null, comp = null;
+const clips = new Map(); let talking = null, queue = [], gen = 0, voiceOut = null;
 
 function impulse(seconds) {
   const n = Math.floor(ctx.sampleRate * seconds), b = ctx.createBuffer(2, n, ctx.sampleRate);
@@ -20,11 +21,13 @@ function init() {
   if (ctx) return true;
   try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return false; }
   master = ctx.createGain(); master.gain.value = 0;
-  const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 4;
+  comp = ctx.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 4;
   level = ctx.createAnalyser(); level.fftSize = 256;
   master.connect(comp); comp.connect(level); level.connect(ctx.destination);
   verb = ctx.createConvolver(); verb.buffer = impulse(3.4);            // a large hall
   const wet = ctx.createGain(); wet.gain.value = .55; verb.connect(wet).connect(master);
+  voiceOut = ctx.createGain(); voiceOut.gain.value = 1.5; voiceOut.connect(comp);          // the voice is not turned down with the music
+  const air = ctx.createGain(); air.gain.value = .1; voiceOut.connect(air).connect(verb);   // a little of the hall on the voice
   return true;
 }
 function bus(vol) {
@@ -143,11 +146,37 @@ function apply() {
 }
 function dropRiser() { if (!riser) return; const r = riser; riser = null; r.g.gain.setTargetAtTime(0, ctx.currentTime, .4); setTimeout(() => { r.osc.forEach((o) => o.stop()); r.g.disconnect(); }, 3000); }
 
+/* ---------- the spoken voice: recordings in audio/<language>/ (see audio/SCRIPT.md) ---------- */
+async function clip(url) {
+  if (clips.has(url)) return clips.get(url);
+  let buf = null;
+  try { const r = await fetch(url); if (r.ok) buf = await ctx.decodeAudioData(await r.arrayBuffer()); } catch (e) { /* no recording for this line: stay silent */ }
+  clips.set(url, buf); return buf;
+}
+function lift() { if (on && ctx) master.gain.setTargetAtTime(.8, ctx.currentTime, .6); }
+function speakNext() {
+  if (talking || !queue.length || !on) return;
+  const url = queue.shift(), g = gen; talking = true;
+  clip(url).then((buf) => {
+    if (g !== gen) return;
+    if (!buf || !on) { talking = null; if (!queue.length) lift(); return speakNext(); }
+    const s = ctx.createBufferSource(); s.buffer = buf; s.connect(voiceOut);
+    master.gain.setTargetAtTime(.28, ctx.currentTime, .15);                // music steps back while the voice speaks
+    s.onended = () => { if (talking !== s) return; talking = null; if (!queue.length) lift(); speakNext(); };
+    talking = s; s.start(); music.said.push(url);
+  });
+}
+
 export const music = {
+  said: [],                                   // the clips played so far (used by the automatic test)
+  ready: () => !!(on && ctx),
+  has: (url) => clip(url).then((b) => !!b),
+  say(urls, replace) { if (!on || !ctx) return; if (replace) this.hush(); queue.push(...urls); speakNext(); },
+  hush() { gen++; queue = []; const s = talking; talking = null; if (s && s.stop) { try { s.stop(); } catch (e) { /* already ended */ } } lift(); },
   // Called on a tap, because browsers only allow sound after one.
   enable(yes) {
     on = yes;
-    if (!yes) { if (ctx) { master.gain.setTargetAtTime(0, ctx.currentTime, .15); dropRiser(); } clearInterval(timer); timer = 0; return; }
+    if (!yes) { if (ctx) { this.hush(); master.gain.setTargetAtTime(0, ctx.currentTime, .15); dropRiser(); } clearInterval(timer); timer = 0; return; }
     if (!init()) return;
     if (ctx.state === 'suspended') ctx.resume();
     master.gain.setTargetAtTime(.8, ctx.currentTime, .3);
