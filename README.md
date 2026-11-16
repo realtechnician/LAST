@@ -20,6 +20,7 @@ You do not need to install anything. The page is plain HTML, CSS and JavaScript.
 | `js/games.js` | The three games and the "ride the wave" breathing scene. |
 | `js/music.js` | The music and sound effects. Nothing is downloaded: the phone makes every sound itself, so it works offline. Each step has its own piece. |
 | `js/scene3d.js` | The 3D gate and the 3D void. |
+| `img/gate-closed.jpg`, `img/gate-open.jpg` | Pictures of the 3D gate, shown on phones that are too slow for 3D and with reduced motion. Made by `tools/render-gate.js`; you only need to run that again if you change the gate. |
 | `vendor/three.module.min.js` | Three.js, the 3D library, kept as a local file so the page needs no other website. Its licence is `vendor/THREE-LICENSE`. |
 | `sw.js` | The "service worker". It keeps a copy of the page on the phone so it opens without internet. |
 | `manifest.webmanifest`, `icon.svg` | Let people add the page to their home screen like an app. |
@@ -92,6 +93,7 @@ Tested in a phone-sized browser window (360 × 740) with an automated script:
 - My plan: add, edit, delete, the "why" line, and that both appear at the end of a rescue.
 - One-tap language switch, lessons with sources, Get help, Practice, Settings, and one-tap delete.
 - The walk: opening the gate by holding, lighting the path, showing and cutting all three threads, lanterns.
+- The end of the path: the dark lifts, the five lanterns gather, and the walk is remembered if you step away and come back (for that visit only; it is not saved).
 - Reduced motion (still scenes), the slow-phone switch from 3D to 2D, and working offline.
 - No request leaves the site, and no cookies are set.
 

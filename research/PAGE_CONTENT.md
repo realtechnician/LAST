@@ -18,6 +18,8 @@
 | notTherapy | A self-help tool, not treatment. | Ni igikoresho cyo kwifasha, si ubuvuzi. |
 | torchHint | Move your finger. It is your light. | Imura urutoki rwawe. Ni rwo rumuri rwawe. [CHECK] |
 | threadHint | Shine on a thread to see the truth. Swipe across to cut it. | Murikira umugozi ubone ukuri. Wunyuzeho urutoki uwuce. [CHECK] |
+| finaleLine | You saw each lie for what it was. Every part of this place is open to you now. | Wabonye buri kinyoma uko kiri. Ubu buri gice cy'aha kiragufunguriwe. [CHECK] |
+| walkAgain | Walk the path again | Ongera ugende inzira [CHECK] |
 | pathOpen | The path is open. | Inzira irafunguye. |
 | falseThought | The thought | Igitekerezo |
 | truth | The truth | Ukuri |

@@ -20,6 +20,8 @@
     notTherapy: { en: 'A self-help tool, not treatment.', rw: 'Ni igikoresho cyo kwifasha, si ubuvuzi.' },
     torchHint: { en: 'Move your finger. It is your light.', rw: 'Imura urutoki rwawe. Ni rwo rumuri rwawe.', check: true },
     threadHint: { en: 'Shine on a thread to see the truth. Swipe across to cut it.', rw: 'Murikira umugozi ubone ukuri. Wunyuzeho urutoki uwuce.', check: true },
+    finaleLine: { en: 'You saw each lie for what it was. Every part of this place is open to you now.', rw: 'Wabonye buri kinyoma uko kiri. Ubu buri gice cy\'aha kiragufunguriwe.', check: true },
+    walkAgain: { en: 'Walk the path again', rw: 'Ongera ugende inzira', check: true },
     pathOpen: { en: 'The path is open.', rw: 'Inzira irafunguye.' },
     falseThought: { en: 'The thought', rw: 'Igitekerezo' },
     truth: { en: 'The truth', rw: 'Ukuri' },
