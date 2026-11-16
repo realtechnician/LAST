@@ -49,7 +49,7 @@ To go straight into the rescue, add `#rescue` to the address: `https://YOUR-NAME
 
 **Change words:** edit `js/content.js`. Each text has an `en` (English) and an `rw` (Kinyarwanda) version. If you have Node.js, run `node tools/make-research-md.js` afterwards so the `research/` files match.
 
-**After any change:** open `sw.js` and change `komera-v1` to `komera-v2` (then `v3`, and so on). Phones that already saved the page will then fetch the new version.
+**After any change:** open `sw.js` and change the version name near the top (for example `komera-v4` to `komera-v5`). Without this, phones keep showing the copy they saved. With it, a phone fetches the new files the next time the page is opened and switches to them at the gate. Settings shows the version a phone is on (for example "v4") at the end of the privacy note.
 
 **Music:** it is off until the person taps the **♪** button at the top (or switches it on in Settings), because people may open the page in public. The choice is remembered on the phone.
 

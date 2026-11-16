@@ -262,8 +262,10 @@ const views = {
     ui.innerHTML = panel(`<h2>${esc(t('navSettings'))}</h2>
       <label>${esc(t('setLang'))}</label><div class="seg"><button data-a="setlang" data-l="en" aria-pressed="${S.lang === 'en'}">English</button><button data-a="setlang" data-l="rw" aria-pressed="${S.lang === 'rw'}">Kinyarwanda</button></div>
       <div style="margin-top:14px">${tg('sound', t('setSound'))}${tg('reduced', t('setMotion'))}${tg('simple', t('setSimple'))}${tg('skipGate', t('setSkipGate'))}${tg('single', t('setSingle'))}</div>
-      <p class="small" style="margin-top:18px">${esc(t('setPrivacy'))} ${esc(t('offlineReady'))}</p>
+      <p class="small" style="margin-top:18px">${esc(t('setPrivacy'))} ${esc(t('offlineReady'))} <span id="ver"></span></p>
       <p><button class="btn danger wide" data-a="wipe">${esc(t('deleteAll'))}</button></p>`, { back: 'hub' });
+    // Shows which saved version this is (the name set in sw.js), to check that an update arrived.
+    if (window.caches) caches.keys().then((k) => { const v = $('#ver'), n = k.filter((x) => x.startsWith('komera-')).pop(); if (v && n) v.textContent = '· ' + n.replace('komera-', ''); }).catch(() => {});
   }
 };
 
@@ -424,5 +426,9 @@ else go('gate');
 addEventListener('hashchange', () => { if (location.hash === '#rescue') startRescue(); });
 load3d();
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
-  navigator.serviceWorker.register('sw.js').catch(() => { /* the page still works without it */ });
+  // When a newer version of the page has been saved, show it at once, but
+  // only at the gate, so nobody is interrupted in the middle of a rescue.
+  const had = !!navigator.serviceWorker.controller; let swapped = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (had && !swapped && cur.name === 'gate') { swapped = true; location.reload(); } });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((r) => r.update()).catch(() => { /* the page still works without it */ });
 }
