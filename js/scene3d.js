@@ -282,6 +282,7 @@ export function create(canvas, opts = {}) {
   sun.position.set(0, -7, -14); sun.scale.set(46, 26, 1); voidG.add(sun);      // the light that rises when the path is open
 
   /* ----- state ----- */
+  let voidT = 99, glide = 0;                  // how long we have been in the void, and the speed carried in from the gate
   let hold = 0, mode = 'gate', openT = 0, openDone = null, running = true, raf = 0, still = !!opts.still, dawnTo = 0, dawn = 0;
   let last = performance.now(), time = 0, frames = 0, phase0 = 0, checked = false, slowTold = false;
   const ease = (x) => { x = Math.max(0, Math.min(1, x)); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
@@ -319,16 +320,23 @@ export function create(canvas, opts = {}) {
       back.intensity = 2 + hold * 70; gateLook(0);
     } else if (mode === 'opening') {
       openT = Math.min(1, openT + dt / 3.6);
-      const sL = ease((openT - .06) / .62), sR = ease((openT - .12) / .62), c = ease((openT - .3) / .7);
+      const sL = ease((openT - .06) / .62), sR = ease((openT - .12) / .62), u = Math.max(0, Math.min(1, (openT - .3) / .7));
+      // The walk through the doorway eases in, but does not stop at the end: it carries a little
+      // speed into the void, so there is no halt between the gate and the path.
+      const cy = ease(u), c = .86 * cy + .14 * (2 * u * u - u * u * u);
       const sh = (1 - sL) * .012 * (openT < .25 ? 1 : 0);     // the leaves give way with a shudder
       doorL.rotation.y = .045 + sL * 1.72; doorR.rotation.y = -.04 - sR * 1.7;
-      cam.position.set(Math.sin(time * 61) * sh, camY0 + (2.2 - camY0) * c + Math.cos(time * 57) * sh, camZ0 - .5 - c * (camZ0 + 5.5));
-      cam.lookAt(0, camY0 + (2.2 - camY0) * c, cam.position.z - 10);
+      cam.position.set(Math.sin(time * 61) * sh, camY0 + (2.2 - camY0) * cy + Math.cos(time * 57) * sh, camZ0 - .5 - c * (camZ0 + 5.5));
+      cam.lookAt(0, camY0 + (2.2 - camY0) * cy, cam.position.z - 12);
       back.intensity = 74 * (1 - c * .65); gateLook(sL); beyond.material.opacity = 1 - sL;
-      if (openT >= 1) { toVoid(); const d = openDone; openDone = null; d && d(); }
+      // The path begins once we are through the doorway and have slowed, while we are still gliding.
+      if (openDone && u >= .88) { const d = openDone; openDone = null; d(); }
+      if (openT >= 1) { toVoid(); voidT = 0; glide = (camZ0 + 5.5) * .14 / (.7 * 3.6); }
     } else {
-      cam.position.set(Math.sin(time * .11) * .5, 2.2 + Math.sin(time * .15) * .35, -6);
-      cam.lookAt(Math.sin(time * .07) * .6, 2.2 + dawn * .6, -18);
+      voidT += dt;
+      const kx = Math.min(1, voidT / 6), k = kx * kx * (3 - 2 * kx);   // the slow drift of the void fades in; it never jumps
+      cam.position.set(Math.sin(time * .11) * .5 * k, 2.2 + Math.sin(time * .15) * .35 * k, -6 - glide * 2.2 * (1 - Math.exp(-voidT / 2.2)));
+      cam.lookAt(Math.sin(time * .07) * .6 * k, 2.2 + dawn * .6 * k, cam.position.z - 12);
       back.intensity = 26;
       dawn += (dawnTo - dawn) * Math.min(1, dt * .7 + (raf ? 0 : 1));
       renderer.toneMappingExposure = 1.05 + dawn * .35; sun.material.opacity = dawn * .55; sun.position.y = -7 + dawn * 5;
@@ -365,7 +373,8 @@ export function create(canvas, opts = {}) {
   return {
     setHold(p) { hold = p; if (!raf) draw(0); },
     open(done) { if (still) { toVoid(); draw(0); done && done(); return; } mode = 'opening'; openT = 0; openDone = done; },
-    toVoid() { toVoid(); cam.position.set(0, 2.2, -6); if (!raf) draw(0); },
+    toVoid() { toVoid(); voidT = 99; glide = 0; if (!raf) draw(0); },
+    get view() { return { mode, x: cam.position.x, y: cam.position.y, z: cam.position.z }; },   // used by the automatic test
     setDawn(on) { dawnTo = on ? 1 : 0; if (!raf) draw(0); },
     pause() { running = false; stop(); },
     resume() { running = true; start(); },

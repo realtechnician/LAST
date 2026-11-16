@@ -85,11 +85,11 @@ function enterVoid() { inVoid = true; body.classList.add('open', 'void'); scene3
 function openGate(done) {
   music.hit('open');
   body.classList.add('open');
-  let called = false; const fin = () => { if (called) return; called = true; inVoid = true; body.classList.add('void'); scene3d && scene3d.toVoid(); done(); };
+  let called = false; const fin = () => { if (called) return; called = true; inVoid = true; body.classList.add('void'); done(); };
   if (S.reduced) { enterVoid(); return fin(); }
   setTimeout(() => body.classList.add('void'), scene3d ? 2600 : 1500);
   if (scene3d) scene3d.open(fin);
-  setTimeout(fin, scene3d ? 4400 : 2700);                       // also the safety net if 3D stops half-way
+  setTimeout(() => { if (!called) { scene3d && scene3d.toVoid(); fin(); } }, scene3d ? 4600 : 2500);                       // also the safety net if 3D stops half-way
 }
 
 /* ---------- Small helpers for building screens ---------- */
@@ -119,7 +119,7 @@ function leave() {
   if (act) { act.stop(); act = null; }
   if (journey) { walk.state = journey.snapshot(); journey.stop(); journey = null; }
   cancelAnimationFrame(motes); motes = 0; fx.getContext('2d').clearRect(0, 0, fx.width, fx.height);
-  body.classList.remove('hub', 'busy', 'dawn'); scene3d && scene3d.setDawn(false);
+  body.classList.remove('hub', 'busy', 'dawn', 'leaving'); scene3d && scene3d.setDawn(false);
   toastEl.classList.remove('on');
   voiceGen++; music.hush();
 }
@@ -187,7 +187,7 @@ const views = {
       onReveal: (i) => { music.hit('reveal'); speak('truth-' + two(C.thoughts.indexOf(walk.thoughts[i]) + 1)); },
       onCut: () => { const r = remind(); music.hit('cut'); toast(`<small>${esc(t('reminder'))}</small>${esc(r.text)}`); speakAfter(r.clip); },
       onHint: (k) => { const h = $('.hint'); if (h && h.dataset.k !== k) { h.dataset.k = k; h.textContent = k === 'thread' ? t('threadHint') : k === 'torch' ? t('torchHint') : ''; } },
-      onEnd: () => { const r = remind(); walk.done = true; walk.line = r.text; walk.clip = r.clip; later(() => { if (cur.name === 'hub') finale(true); }, 900); }
+      onEnd: () => { const r = remind(); walk.done = true; walk.line = r.text; walk.clip = r.clip; arrive(); }
     });
     journey.start();
   },
@@ -301,11 +301,19 @@ function finaleScreen() {
     <div class="ring">${['rescue', 'plan', 'learn', 'practice', 'help'].map(lamp).join('')}</div>
     <button class="btn ghost" data-a="rewalk">${esc(t('walkAgain'))}</button></div></section>`;
 }
+// Reaching the end: the light and the music begin at once, the path and the torch melt
+// away while the dark lifts, and only then do the words and the lanterns rise.
+function arrive() {
+  body.classList.remove('hub'); body.classList.add('dawn', 'leaving'); toastEl.classList.remove('on');
+  scene3d && scene3d.setDawn(true);
+  music.hit('dawn'); music.scene('end');
+  later(() => { if (cur.name === 'hub') finale(true); }, 1500);
+}
 function finale(arriving) {
   if (journey) { journey.stop(); journey = null; }
-  body.classList.remove('hub'); body.classList.add('dawn'); toastEl.classList.remove('on');
+  body.classList.remove('hub', 'leaving'); body.classList.add('dawn'); toastEl.classList.remove('on');
   scene3d && scene3d.setDawn(true);
-  if (arriving) { music.hit('dawn'); music.scene('end'); later(() => speak('path-open', walk.clip), 1800); }
+  if (arriving) later(() => speak('path-open', walk.clip), 600);
   finaleScreen();
   // Warm motes of light rise through the void.
   const g = fx.getContext('2d'), dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -439,7 +447,7 @@ ui.addEventListener('click', (e) => {
   actions[b.dataset.a](b);
 });
 
-if (TEST) window.__k = { get journey() { return journey; }, get state() { return S; }, get view() { return cur.name; }, music };
+if (TEST) window.__k = { get journey() { return journey; }, get state() { return S; }, get view() { return cur.name; }, get scene() { return scene3d; }, music };
 
 /* ---------- Start ---------- */
 root.lang = S.lang;
