@@ -2,6 +2,7 @@
 // rescue, and saves the plan and settings on this phone only.
 // Nothing here talks to a server.
 import { createJourney } from './journey.js';
+import { music } from './music.js';
 import { fitGame, sortGame, pathGame, waveScene } from './games.js';
 
 const C = window.CONTENT;
@@ -33,40 +34,10 @@ const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const forMe = (x) => !(S.single && x.partner);
 function reminder() { const r = pick(C.reminders.filter(forMe)); return L(S.single && r.single ? r.single : r); }
 
-/* ---------- Sound: off unless switched on ---------- */
-let ac = null, hum = null;
-function audio() {
-  if (!S.sound) return null;
-  try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); return ac; } catch (e) { return null; }
-}
-function humOn() {
-  const a = audio(); if (!a || hum) return;
-  const gain = a.createGain(), f = a.createBiquadFilter();
-  gain.gain.value = 0; gain.gain.linearRampToValueAtTime(.05, a.currentTime + 2);
-  f.type = 'lowpass'; f.frequency.value = 200; f.connect(gain).connect(a.destination);
-  const osc = [55, 55.7, 82.4].map((hz) => { const o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.value = hz; o.connect(f); o.start(); return o; });
-  hum = { gain, osc };
-}
-function humOff() {
-  if (!hum || !ac) return; const h = hum; hum = null;
-  h.gain.gain.cancelScheduledValues(ac.currentTime); h.gain.gain.linearRampToValueAtTime(0, ac.currentTime + .4);
-  setTimeout(() => { h.osc.forEach((o) => o.stop()); h.gain.disconnect(); }, 600);
-}
-function gateSound() {
-  const a = audio(); if (!a) return;
-  const n = a.sampleRate * 2.6, buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
-  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 1.5);
-  const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
-  src.buffer = buf; f.type = 'lowpass'; f.frequency.setValueAtTime(420, a.currentTime); f.frequency.exponentialRampToValueAtTime(70, a.currentTime + 2.4);
-  g.gain.value = .5; src.connect(f).connect(g).connect(a.destination); src.start();
-  const o = a.createOscillator(), og = a.createGain(); o.frequency.setValueAtTime(70, a.currentTime); o.frequency.exponentialRampToValueAtTime(32, a.currentTime + .9);
-  og.gain.setValueAtTime(.5, a.currentTime); og.gain.exponentialRampToValueAtTime(.001, a.currentTime + 1.2); o.connect(og).connect(a.destination); o.start(); o.stop(a.currentTime + 1.3);
-}
-function chime() {
-  const a = audio(); if (!a) return;
-  const o = a.createOscillator(), g = a.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(660, a.currentTime); o.frequency.exponentialRampToValueAtTime(990, a.currentTime + .25);
-  g.gain.setValueAtTime(.12, a.currentTime); g.gain.exponentialRampToValueAtTime(.001, a.currentTime + .8); o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime + .9);
-}
+/* ---------- Sound and music: off unless switched on (see js/music.js) ---------- */
+const audio = () => music.unlock();
+const SCENE = { gate: 'gate', hub: 'void', end: 'end' };          // every other screen plays the void music quietly
+addEventListener('pointerdown', () => { if (S.sound) music.enable(true); }, { once: true });
 
 /* ---------- The scene: 3D if the phone can run it, simple 2D if not ---------- */
 let scene3d = null, hold = 0, inVoid = false, sessionSimple = false;
@@ -96,7 +67,7 @@ function applyMotion() {
 function setHold(p) { hold = p; root.style.setProperty('--hold', p.toFixed(3)); scene3d && scene3d.setHold(p); }
 function enterVoid() { inVoid = true; body.classList.add('open', 'void'); scene3d && scene3d.toVoid(); }
 function openGate(done) {
-  gateSound();
+  music.hit('open');
   body.classList.add('open');
   let called = false; const fin = () => { if (called) return; called = true; inVoid = true; body.classList.add('void'); done(); };
   if (S.reduced) { enterVoid(); return fin(); }
@@ -111,7 +82,8 @@ function toast(html, ms = 5200) { toastEl.innerHTML = html; toastEl.classList.ad
 const otherLang = () => (S.lang === 'en' ? 'Kinyarwanda' : 'English');
 function top(o = {}) {
   return `<div class="top"><span>${o.back ? `<button data-a="go" data-to="${o.back}" aria-label="${esc(t('back'))}">‹ ${esc(t('back'))}</button>` : o.menu ? `<button data-a="go" data-to="menu" aria-label="${esc(t('menu'))}">☰ ${esc(t('menu'))}</button>` : ''}</span>
-  <button data-a="lang" lang="${S.lang === 'en' ? 'rw' : 'en'}">${otherLang()}</button></div>`;
+  <span><button data-a="sound" aria-pressed="${!!S.sound}" aria-label="${esc(t('setSound'))}: ${esc(t(S.sound ? 'on' : 'off'))}">${S.sound ? '♪' : '<s>♪</s>'} ${esc(t(S.sound ? 'on' : 'off'))}</button>
+  <button data-a="lang" lang="${S.lang === 'en' ? 'rw' : 'en'}">${otherLang()}</button></span></div>`;
 }
 function sources(refs) {
   return `<ul class="src">${refs.map((n) => { const s = C.sources[n]; return s ? `<li><a href="${esc(s.u)}" target="_blank" rel="noopener noreferrer">${esc(s.t)}</a></li>` : ''; }).join('')}</ul>`;
@@ -137,7 +109,7 @@ function go(name, arg) {
   if (name !== 'gate' && !inVoid) enterVoid();
   const live = name === 'gate' || name === 'hub';
   if (scene3d) live ? scene3d.resume() : scene3d.pause();
-  live && name === 'hub' ? humOn() : humOff();
+  music.scene(SCENE[name] || 'quiet');
   views[name](arg);
   const p = $('.panel'); if (p) p.scrollTop = 0;
 }
@@ -161,7 +133,7 @@ const views = {
       raf = requestAnimationFrame(tick);
       const dt = (now - last) / 1000; last = now;
       const next = Math.max(0, Math.min(1, hold + (holding ? dt / 2 : -dt / 1.2)));
-      if (next !== hold) setHold(next);
+      if (next !== hold) { setHold(next); sing(); }
       if (hold >= 1) {
         opened = true; S.seen = true; save();
         gate.style.transition = 'opacity .8s'; gate.style.opacity = 0; gate.style.pointerEvents = 'none';
@@ -169,6 +141,7 @@ const views = {
       }
     };
     const on = (e) => { if (e.target.closest('button')) return; holding = true; audio(); };
+    const sing = () => { if (cur.name === 'gate' && !opened) music.hold(hold); };
     const off = () => { holding = false; };
     gate.addEventListener('pointerdown', on); gate.addEventListener('pointerup', off);
     gate.addEventListener('pointercancel', off); gate.addEventListener('pointerleave', off);
@@ -188,7 +161,8 @@ const views = {
       canvas: fx, world, thoughts, L, t, reduced: false,
       label: (id) => t('nav' + id[0].toUpperCase() + id.slice(1)),
       onLantern: (id) => (id === 'rescue' ? startRescue() : go(id)),
-      onCut: () => { chime(); toast(`<small>${esc(t('reminder'))}</small>${esc(reminder())}`); },
+      onReveal: () => music.hit('reveal'),
+      onCut: () => { music.hit('cut'); toast(`<small>${esc(t('reminder'))}</small>${esc(reminder())}`); },
       onHint: (k) => { const h = $('.hint'); if (h && h.dataset.k !== k) { h.dataset.k = k; h.textContent = k === 'thread' ? t('threadHint') : k === 'torch' ? t('torchHint') : ''; } },
       onEnd: () => toast(`<small>${esc(t('reminder'))}</small>${esc(reminder())}`, 7000)
     });
@@ -298,16 +272,16 @@ function hubChrome() {
 /* ---------- The rescue: rate, 3 minutes, rate again, maybe once more, end ---------- */
 let R = { round: 1, played: [], last: 0 };
 function startRescue() { R = { round: 1, played: [], last: 0 }; go('rate', 1); }
-function afterActivity() { go('rate', 2); }
+function afterActivity() { music.hit('done'); go('rate', 2); }
 function rated(n) {
-  R.last = n;
+  R.last = n; music.hit('tap');
   if (cur.arg === 1) return n >= 7 ? go('choose', false) : playWave(afterActivity);
   if (n >= 7 && R.round === 1) { R.round = 2; return go('choose', true); }
   go('end');
 }
 function activity(html) {
   leave(); cur = { name: 'act' };
-  scene3d && scene3d.pause(); humOff();
+  scene3d && scene3d.pause();
   body.classList.add('busy');
   ui.innerHTML = `<section class="act"><div class="bar"><i></i></div>${html}<button class="skip" data-a="skipact">${esc(t('skip'))}</button></section>`;
   const bar = $('.bar i');
@@ -315,7 +289,7 @@ function activity(html) {
 }
 let onActEnd = null;
 function playGame(k) {
-  R.played.push(k);
+  R.played.push(k); music.scene('game');
   const how = { fit: 'gameFitHow', sort: 'gameSortHow', path: 'gamePathHow' }[k];
   const tick = activity(`<div class="how">${esc(t(how))}</div>${k === 'fit' ? `<div class="pad"><button class="btn" data-a="turn" data-d="-1" aria-label="${esc(t('gameTurn'))} ‹">‹</button><button class="btn" data-a="drop">${esc(t('gameDrop'))}</button><button class="btn" data-a="turn" data-d="1" aria-label="${esc(t('gameTurn'))} ›">›</button></div>` : ''}`);
   later(() => { const h = $('.how'); if (h) h.style.opacity = 0; }, 7000);
@@ -324,7 +298,7 @@ function playGame(k) {
 }
 function playWave(done) {
   const tick = activity(`<div class="say"></div><div class="breath"></div>`);
-  const say = $('.say'), br = $('.breath'); let shown = -1;
+  const say = $('.say'), br = $('.breath'); let shown = -1; music.scene('wave');
   onActEnd = done;
   act = waveScene(fx, {
     duration: DUR.wave, reduced: S.reduced,
@@ -339,7 +313,7 @@ function playWave(done) {
 }
 function playMove() {
   const tick = activity(`<div class="big"></div>`);
-  const big = $('.big'), t0 = performance.now(); let shown = -1, raf = 0;
+  const big = $('.big'), t0 = performance.now(); let shown = -1, raf = 0; music.scene('move');
   onActEnd = afterActivity;
   const loop = (now) => {
     const p = (now - t0) / 1000 / DUR.move; tick(p);
@@ -357,6 +331,7 @@ const actions = {
   go: (b) => go(b.dataset.to, b.dataset.arg != null ? +b.dataset.arg : undefined),
   rescue: () => startRescue(),
   lang: () => setLang(S.lang === 'en' ? 'rw' : 'en'),
+  sound: () => { S.sound = !S.sound; save(); music.enable(S.sound); music.hit('tap'); rerender(); },
   setlang: (b) => setLang(b.dataset.l),
   rated: (b) => rated(+b.dataset.n),
   game: (b) => playGame(b.dataset.k),
@@ -381,13 +356,12 @@ const actions = {
     const lang = S.lang;
     try { localStorage.removeItem(KEY); } catch (e) { /* nothing was saved */ }
     S = defaults(); S.lang = lang;                      // kept for this visit only, not saved
-    humOff(); applyMotion(); go(cur.name === 'settings' ? 'settings' : 'plan'); toast(esc(t('deleted')), 3200);
+    music.enable(false); applyMotion(); go(cur.name === 'settings' ? 'settings' : 'plan'); toast(esc(t('deleted')), 3200);
   },
   set: (b) => {
     const k = b.dataset.k; S[k] = !S[k]; save();
     if (k === 'reduced' || k === 'simple') { if (!S.reduced && !S.simple) sessionSimple = false; applyMotion(); }
-    if (k === 'sound' && !S.sound) humOff();
-    if (k === 'sound' && S.sound) chime();
+    if (k === 'sound') { music.enable(S.sound); music.hit('tap'); }
     views.settings();
   }
 };
@@ -398,7 +372,7 @@ ui.addEventListener('click', (e) => {
   actions[b.dataset.a](b);
 });
 
-if (TEST) window.__k = { get journey() { return journey; }, get state() { return S; }, get view() { return cur.name; } };
+if (TEST) window.__k = { get journey() { return journey; }, get state() { return S; }, get view() { return cur.name; }, music };
 
 /* ---------- Start ---------- */
 root.lang = S.lang;
