@@ -51,7 +51,7 @@
 | pathMild | Let us ride it out together for 3 minutes. | Reka turigendereho hamwe mu minota 3. [CHECK] |
 | chooseGame | Choose one | Hitamo kimwe |
 | gameFit | Fit the shapes | Panga ibishushanyo [CHECK] |
-| gameFitHow | Slide and turn falling shapes to fill rows. | Imura kandi uhindukize ibishushanyo bigwa kugira ngo wuzuze imirongo. [CHECK] |
+| gameFitHow | Point to where each falling arc should land. Fill a ring. | Erekana aho buri gice kigwa kigomba kujya. Uzuza uruziga. [CHECK] |
 | gameSort | Sort the lights | Tandukanya amatara [CHECK] |
 | gameSortHow | Drag each light to the ring of its colour. | Kurura buri tara urijyane mu ruziga rw'ibara ryaryo. [CHECK] |
 | gamePath | Follow the path | Kurikira inzira |
@@ -63,6 +63,11 @@
 | moveGuide | Move for 2 minutes | Inyeganyeze iminota 2 [CHECK] |
 | endTitle | You stayed. That is the skill. | Wagumyeho. Ubwo ni bwo bushobozi. [CHECK] |
 | endHonest | The urge may come back. You now know you can get through it. | Irari rishobora kugaruka. Ubu uzi ko ushobora kurinyuramo. [CHECK] |
+| stillAfter | Still strong? Change where you are right now, and reach a person you trust. | Riracyakomeye? Hindura aho uri nonaha, kandi uvugishe umuntu wizeye. [CHECK] |
+| menu | Menu | Ibirimo [CHECK] |
+| another | Another | Ikindi |
+| sources | Sources | Inkomoko |
+| lessons | Lessons | Amasomo |
 | yourPlan | Your plan | Gahunda yawe |
 | yourWhy | Your why | Impamvu yawe |
 | noPlanYet | No plan yet. One sentence now makes next time easier. | Nta gahunda urandika. Interuro imwe ubu izoroshya ubutaha. [CHECK] |
